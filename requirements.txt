@@ -1,0 +1,8 @@
+streamlit
+sympy
+scipy
+plotly
+schemdraw
+numpy
+python-pptx
+kaleido
