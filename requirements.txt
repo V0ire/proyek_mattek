@@ -6,3 +6,5 @@ schemdraw
 numpy
 python-pptx
 kaleido
+matplotlib
+matplotlib
