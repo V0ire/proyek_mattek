@@ -17,22 +17,33 @@ except ImportError:
 
 # 1. Konfigurasi Halaman & Tema Light Mode
 st.set_page_config(layout="wide", page_title="Analisis Transien Rangkaian Listrik", page_icon="⚡")
+import matplotlib
+matplotlib.use('Agg')
+schemdraw.use('matplotlib')
 
 # Fungsi-fungsi SchemDraw (Menyimpan sebagai PNG untuk Support PPTX & Light Theme)
 def draw_full_schematic():
     path = "schema_full.svg"
     with schemdraw.Drawing(show=False) as d:
         d.config(color='black', bgcolor='white', lw=2)
-        d += elm.SourceSin().up().label('$v(t)$')
-        d += elm.Inductor().right().label('$L_1=2H$')
-        d += elm.Resistor().right().label('$R_1=4\\Omega$')
+        V1 = d.add(elm.SourceSin().up().label('$v(t)$', loc='left'))
+        R1 = d.add(elm.Resistor().right().label('$4\\,\\Omega$'))
         d.push()
-        d += elm.Resistor().down().label('$R_{shared}=8\\Omega$', loc='bottom')
-        d += elm.Line().left().tox(d.elements[0].start)
+        Rsh = d.add(elm.Resistor().down().label('$8\\,\\Omega$', loc='bottom'))
+        L1 = d.add(elm.Inductor().left().label('$2\\text{ H}$', loc='bottom'))
+        
         d.pop()
-        d += elm.Inductor().right().label('$L_2=4H$')
-        d += elm.Resistor().down().label('$R_2=8\\Omega$', loc='bottom')
-        d += elm.Line().left().tox(d.elements[3].start)
+        R2 = d.add(elm.Resistor().right().label('$8\\,\\Omega$'))
+        Line2 = d.add(elm.Line().down())
+        L2 = d.add(elm.Inductor().left().label('$4\\text{ H}$', loc='bottom'))
+        
+        c1x = (V1.start[0] + Rsh.start[0]) / 2
+        c1y = (V1.start[1] + R1.end[1]) / 2
+        d += elm.LoopArrow(width=1.2, height=1.2, direction='cw').at((c1x, c1y)).label('$i_1$', color='#00a2ed').color('#00a2ed')
+        
+        c2x = (Rsh.start[0] + Line2.end[0]) / 2
+        c2y = (R2.start[1] + L2.start[1]) / 2
+        d += elm.LoopArrow(width=1.2, height=1.2, direction='cw').at((c2x, c2y)).label('$i_2$', color='#00a2ed').color('#00a2ed')
         try:
             d.save(path)
         except Exception:
@@ -43,16 +54,19 @@ def draw_loop1_only():
     path = "schema_loop1.svg"
     with schemdraw.Drawing(show=False) as d:
         d.config(color='black', bgcolor='white', lw=2)
-        d += elm.SourceSin().up().label('$v(t)$')
-        d += elm.Inductor().right().label('$L_1=2H$')
-        d += elm.Resistor().right().label('$R_1=4\\Omega$')
+        V1 = d.add(elm.SourceSin().up().label('$v(t)$', loc='left'))
+        R1 = d.add(elm.Resistor().right().label('$4\\,\\Omega$'))
         d.push()
-        d += elm.Resistor().down().label('$R_{shared}=8\\Omega$', loc='bottom')
-        d += elm.Line().left().tox(d.elements[0].start)
+        Rsh = d.add(elm.Resistor().down().label('$8\\,\\Omega$', loc='bottom'))
+        L1 = d.add(elm.Inductor().left().label('$2\\text{ H}$', loc='bottom'))
+        
         d.pop()
-        # Loop 2 Terbuka
-        d += elm.Line().right().length(1)
-        d += elm.Dot(open=True)
+        d.add(elm.Line().right().length(1))
+        d.add(elm.Dot(open=True))
+        
+        c1x = (V1.start[0] + Rsh.start[0]) / 2
+        c1y = (V1.start[1] + R1.end[1]) / 2
+        d += elm.LoopArrow(width=1.2, height=1.2, direction='cw').at((c1x, c1y)).label('$i_1$', color='#00a2ed').color('#00a2ed')
         try:
             d.save(path)
         except Exception:
@@ -63,15 +77,20 @@ def draw_loop2_only():
     path = "schema_loop2.svg"
     with schemdraw.Drawing(show=False) as d:
         d.config(color='black', bgcolor='white', lw=2)
-        d += elm.Dot(open=True)
-        d += elm.Line().right().length(1)
+        d.add(elm.Dot(open=True))
+        d.add(elm.Line().right().length(1))
         d.push()
-        d += elm.Resistor().down().label('$R_{shared}=8\\Omega$', loc='bottom')
-        d += elm.Line().left().tox(d.elements[0].start)
+        Rsh = d.add(elm.Resistor().down().label('$8\\,\\Omega$', loc='bottom'))
+        d.add(elm.Line().left().tox(d.elements[0].start))
+        
         d.pop()
-        d += elm.Inductor().right().label('$L_2=4H$')
-        d += elm.Resistor().down().label('$R_2=8\\Omega$', loc='bottom')
-        d += elm.Line().left().tox(d.elements[3].start)
+        R2 = d.add(elm.Resistor().right().label('$8\\,\\Omega$'))
+        Line2 = d.add(elm.Line().down())
+        L2 = d.add(elm.Inductor().left().label('$4\\text{ H}$', loc='bottom'))
+        
+        c2x = (Rsh.start[0] + Line2.end[0]) / 2
+        c2y = (R2.start[1] + L2.start[1]) / 2
+        d += elm.LoopArrow(width=1.2, height=1.2, direction='cw').at((c2x, c2y)).label('$i_2$', color='#00a2ed').color('#00a2ed')
         try:
             d.save(path)
         except Exception:
@@ -236,25 +255,25 @@ render_latex(r"i_{2, Soal1}(t) = " + sp.latex(i2_t))
 # SOAL 2
 # ==========================================
 st.markdown("---")
-st.subheader(r"Penyelesaian Soal 2: Sumber Tegangan Terputus di $t=\pi$")
-st.markdown(r"Pada kasus ini, tegangan sumber dimatikan secara mendadak pada saat $t = \pi$. Secara matematis, eksitasi dimodelkan dengan fungsi *Heaviside Step Function* $u(t)$:")
-render_latex(r"v_2(t) = 390 \cos(t) [1 - u(t - \pi)]")
-render_latex(r"v_2(t) = 390 \cos(t) - 390 \cos(t) u(t - \pi)")
+st.subheader(r"Penyelesaian Soal 2: Sumber Tegangan Terputus di $t=3\pi$")
+st.markdown(r"Pada kasus ini, tegangan sumber dimatikan secara mendadak pada saat $t = 3\pi$. Secara matematis, eksitasi dimodelkan dengan fungsi *Heaviside Step Function* $u(t)$:")
+render_latex(r"v_2(t) = 390 \cos(t) [1 - u(t - 3\pi)]")
+render_latex(r"v_2(t) = 390 \cos(t) - 390 \cos(t) u(t - 3\pi)")
 
-st.markdown(r"Mengingat properti fungsi trigonometri $\cos(t - \pi) = -\cos(t)$, kita ubah persamaannya agar selaras dengan **Teorema Pergeseran Waktu (Time-Shifting)**:")
-render_latex(r"v_2(t) = 390 \cos(t) + 390 \cos(t - \pi) u(t - \pi)")
+st.markdown(r"Mengingat properti fungsi trigonometri $\cos(t - 3\pi) = -\cos(t)$, kita ubah persamaannya agar selaras dengan **Teorema Pergeseran Waktu (Time-Shifting)**:")
+render_latex(r"v_2(t) = 390 \cos(t) + 390 \cos(t - 3\pi) u(t - 3\pi)")
 
 st.markdown("Menerapkan Transformasi Laplace menghasilkan komponen *exponential decay* di s-plane:")
-render_latex(r"V_2(s) = \frac{390s}{s^2 + 1} + e^{-\pi s} \frac{390s}{s^2 + 1} = \frac{390s}{s^2 + 1} (1 + e^{-\pi s})")
+render_latex(r"V_2(s) = \frac{390s}{s^2 + 1} + e^{-3\pi s} \frac{390s}{s^2 + 1} = \frac{390s}{s^2 + 1} (1 + e^{-3\pi s})")
 
 st.markdown("Sehingga fungsi arus pada domain-s (Laplace) untuk Soal 2 secara identik memuat pergeseran yang sama terhadap matriks Soal 1:")
-render_latex(r"I_{1, Soal2}(s) = I_1(s) + I_1(s) e^{-\pi s}")
-render_latex(r"I_{2, Soal2}(s) = I_2(s) + I_2(s) e^{-\pi s}")
+render_latex(r"I_{1, Soal2}(s) = I_1(s) + I_1(s) e^{-3\pi s}")
+render_latex(r"I_{2, Soal2}(s) = I_2(s) + I_2(s) e^{-3\pi s}")
 
 st.markdown("Dengan menerapkan *Inverse Laplace* pada teorema tersebut, hasil di domain waktu merepresentasikan redaman asimtotik yang murni:")
-render_latex(r"i_{1, Soal2}(t) = i_1(t) + i_1(t - \pi) u(t - \pi)")
-render_latex(r"i_{2, Soal2}(t) = i_2(t) + i_2(t - \pi) u(t - \pi)")
-st.markdown(r"*(Penting: Saat $t \geq \pi$, seluruh komponen sinusoidal atau forced response akan saling membatalkan secara matematis, menyisakan respons energi buangan (*natural decay*) pada resistor.)*")
+render_latex(r"i_{1, Soal2}(t) = i_1(t) + i_1(t - 3\pi) u(t - 3\pi)")
+render_latex(r"i_{2, Soal2}(t) = i_2(t) + i_2(t - 3\pi) u(t - 3\pi)")
+st.markdown(r"*(Penting: Saat $t \geq 3\pi$, seluruh komponen sinusoidal atau forced response akan saling membatalkan secara matematis, menyisakan respons energi buangan (*natural decay*) pada resistor.)*")
 
 st.markdown("---")
 
@@ -311,13 +330,13 @@ t_vals = np.linspace(0, 25, 1000)
 i1_cont = -26*np.exp(-2*t_vals) - 16*np.exp(-8*t_vals) + 42*np.cos(t_vals) + 15*np.sin(t_vals)
 i2_cont = -26*np.exp(-2*t_vals) + 8*np.exp(-8*t_vals) + 18*np.cos(t_vals) + 12*np.sin(t_vals)
 
-# Array Soal 2: Putus pada t=pi
-i1_putus = np.where(t_vals < np.pi, 
+# Array Soal 2: Putus pada t=3pi
+i1_putus = np.where(t_vals < 3*np.pi, 
                     i1_cont, 
-                    -26*np.exp(-2*t_vals)*(1 + np.exp(2*np.pi)) - 16*np.exp(-8*t_vals)*(1 + np.exp(8*np.pi)))
-i2_putus = np.where(t_vals < np.pi,
+                    -26*np.exp(-2*t_vals)*(1 + np.exp(6*np.pi)) - 16*np.exp(-8*t_vals)*(1 + np.exp(24*np.pi)))
+i2_putus = np.where(t_vals < 3*np.pi,
                     i2_cont,
-                    -26*np.exp(-2*t_vals)*(1 + np.exp(2*np.pi)) + 8*np.exp(-8*t_vals)*(1 + np.exp(8*np.pi)))
+                    -26*np.exp(-2*t_vals)*(1 + np.exp(6*np.pi)) + 8*np.exp(-8*t_vals)*(1 + np.exp(24*np.pi)))
 
 fig_arus = make_subplots(rows=1, cols=2, subplot_titles=("Arus Loop 1 (i1)", "Arus Loop 2 (i2)"), shared_yaxes=True)
 
@@ -330,7 +349,7 @@ fig_arus.add_trace(go.Scatter(x=t_vals, y=i2_cont, mode='lines', name='Soal 1 (i
 fig_arus.add_trace(go.Scatter(x=t_vals, y=i2_putus, mode='lines', name='Soal 2 (i2 Putus t=π)', line=dict(color='#d62728', dash='dash', width=2.5)), row=1, col=2)
 
 # Garis putus pada t = pi
-pi_val = np.pi
+pi_val = 3 * np.pi
 fig_arus.add_vline(x=pi_val, line_dash="dot", line_color="black", row=1, col=1)
 fig_arus.add_vline(x=pi_val, line_dash="dot", line_color="black", row=1, col=2)
 
@@ -350,7 +369,7 @@ st.markdown(r"""
 ### Narasi Analisis Fisis
 **Observasi Grafik:**
 1. **Soal 1 (Garis Solid)**: Pada detik awal ($0 \leq t < 3$ detik), terjadi efek *transien* di mana amplitudo belum stabil dan gelombang terdistorsi oleh redaman eksponensial. Setelah melampaui rentang $t > 5$ detik, arus sepenuhnya masuk ke dalam wujud *steady-state* osilasi murni tanpa redaman akibat suplai paksa berkelanjutan dari tegangan sumber.
-2. **Soal 2 (Garis Putus-Putus)**: Tepat pada $t = \pi \approx 3.14$ detik (ditandai garis vertikal), interupsi eksitasi terjadi. Secara visual, arus pada grafik tidak jatuh lurus menghantam 0 Ampere, membuktikan inersia akibat induktor $L$. Secara empiris, *forced response* lenyap, menyisakan *natural response* peluruhan eksponensial murni yang meluruh ke arah ekuilibrium. Saat waktu diekspansi hingga $25$ detik, energi magnetik di dalam kumparan dipastikan telah terkuras seutuhnya (menjadi panas oleh resistor $R$).
+2. **Soal 2 (Garis Putus-Putus)**: Tepat pada $t = 3\pi \approx 9.42$ detik (ditandai garis vertikal), interupsi eksitasi terjadi. Secara visual, arus pada grafik tidak jatuh lurus menghantam 0 Ampere, membuktikan inersia akibat induktor $L$. Secara empiris, *forced response* lenyap, menyisakan *natural response* peluruhan eksponensial murni yang meluruh ke arah ekuilibrium. Saat waktu diekspansi hingga $25$ detik, energi magnetik di dalam kumparan dipastikan telah terkuras seutuhnya (menjadi panas oleh resistor $R$).
 """)
 
 # --- Export PPTX Section ---
